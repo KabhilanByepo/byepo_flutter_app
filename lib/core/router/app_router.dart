@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/bridge/presentation/cubit/bridge_cubit.dart';
+import '../../features/bridge/presentation/pages/bridge_poc_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../features/stock/domain/entities/stock.dart';
 import '../../features/stock/presentation/cubit/dashboard_cubit.dart';
@@ -23,8 +25,8 @@ final _accountsNavigatorKey = GlobalKey<NavigatorState>();
 
 /// The single navigation graph for the app.
 ///
-/// - `/splash` and `/stock-details/:symbol` are top-level routes on the root
-///   navigator (full screen, no bottom bar).
+/// - `/splash`, `/bridge-poc`, and `/stock-details/:symbol` are top-level
+///   routes on the root navigator (full screen, no bottom bar).
 /// - `/dashboard`, `/watchlist`, `/accounts` are the three branches of a
 ///   `StatefulShellRoute.indexedStack`, so each tab keeps its own navigation
 ///   stack and widget state, and the selected tab is derived from the URL.
@@ -37,6 +39,14 @@ class AppRouter {
             path: '/splash',
             name: 'splash',
             builder: (context, state) => const SplashPage(),
+          ),
+          GoRoute(
+            path: '/bridge-poc',
+            name: 'bridgePoc',
+            builder: (context, state) => BlocProvider(
+              create: (_) => sl<BridgeCubit>(),
+              child: const BridgePocPage(),
+            ),
           ),
           GoRoute(
             path: '/stock-details/:symbol',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/theme_cubit.dart';
 
@@ -82,6 +83,16 @@ class AccountsPage extends StatelessWidget {
                   trailing: Text('Finnhub'),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.developer_mode_outlined),
+              title: const Text('Bridge POC'),
+              subtitle: const Text('App ↔ TWA ↔ React Web demo'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/bridge-poc'),
             ),
           ),
           const SizedBox(height: 24),

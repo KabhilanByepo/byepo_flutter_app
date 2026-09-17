@@ -16,11 +16,12 @@ class ConnectivityService {
   final _controller = StreamController<bool>.broadcast();
   StreamSubscription<List<ConnectivityResult>>? _subscription;
   bool _isOnline = true;
+  bool? _debugOverride;
 
   ConnectivityService({Connectivity? connectivity})
       : _connectivity = connectivity ?? Connectivity();
 
-  bool get isOnline => _isOnline;
+  bool get isOnline => _debugOverride ?? _isOnline;
 
   /// Only emits when online/offline actually flips.
   Stream<bool> get onStatusChanged => _controller.stream;
@@ -31,9 +32,19 @@ class ConnectivityService {
       final online = _computeOnline(results);
       if (online != _isOnline) {
         _isOnline = online;
-        _controller.add(online);
+        if (_debugOverride == null) _controller.add(online);
       }
     });
+  }
+
+  /// Debug/demo-only: forces [isOnline] and [onStatusChanged] to report
+  /// [online] regardless of the real platform signal, until cleared with
+  /// `debugOverrideOnline(null)`. Used by the Bridge POC's "simulate
+  /// offline/online" controls, since there's no way to flip real OS
+  /// connectivity from a UI button. No production code path calls this.
+  void debugOverrideOnline(bool? online) {
+    _debugOverride = online;
+    _controller.add(isOnline);
   }
 
   bool _computeOnline(List<ConnectivityResult> results) =>

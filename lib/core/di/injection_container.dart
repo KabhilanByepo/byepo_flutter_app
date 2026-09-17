@@ -1,8 +1,10 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:get_it/get_it.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../features/bridge/presentation/cubit/bridge_cubit.dart';
 import '../../features/stock/data/datasources/mock_stock_data.dart';
 import '../../features/stock/data/datasources/stock_local_data_source.dart';
 import '../../features/stock/data/datasources/stock_remote_data_source.dart';
@@ -22,6 +24,8 @@ import '../../features/watchlist/domain/usecases/get_watchlist.dart';
 import '../../features/watchlist/domain/usecases/remove_from_watchlist.dart';
 import '../../features/watchlist/presentation/cubit/watchlist_cubit.dart';
 import '../../features/watchlist/presentation/cubit/watchlist_stocks_cubit.dart';
+import '../bridge/bridge_service.dart';
+import '../bridge/bridge_web_config.dart';
 import '../connectivity/connectivity_cubit.dart';
 import '../connectivity/connectivity_service.dart';
 import '../lifecycle/app_lifecycle_cubit.dart';
@@ -46,6 +50,23 @@ Future<void> initDependencies() async {
   sl.registerLazySingleton<ConnectivityService>(() => connectivityService);
 
   sl.registerLazySingleton<AppLifecycleService>(() => AppLifecycleService());
+
+  // Bridge POC: serves the bundled `web_poc` React build over
+  // http://localhost so its root-relative asset paths resolve, then wires
+  // the App<->Web event bridge on top of it.
+  final localhostServer = InAppLocalhostServer(
+    documentRoot: BridgeWebConfig.documentRoot,
+    port: BridgeWebConfig.port,
+  );
+  await localhostServer.start();
+  sl.registerLazySingleton<InAppLocalhostServer>(() => localhostServer);
+
+  final bridgeService = BridgeService(
+    connectivityService: connectivityService,
+    prefs: prefs,
+  );
+  await bridgeService.initialize();
+  sl.registerLazySingleton<BridgeService>(() => bridgeService);
 
   sl.registerLazySingleton<Dio>(
     () => DioClient.create(connectivityService: sl()),
@@ -101,6 +122,9 @@ Future<void> initDependencies() async {
   );
   sl.registerFactory(
     () => WatchlistStocksCubit(getStocks: sl(), watchlistCubit: sl()),
+  );
+  sl.registerFactory(
+    () => BridgeCubit(bridgeService: sl(), connectivityService: sl()),
   );
 
   // Cross-cutting: lifecycle, connectivity, theme. Each computes its
